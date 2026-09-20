@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The tcpdump Field Guide</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface-subtle: #21262d;
+      --border: #30363d;
+      --text-main: #c9d1d9;
+      --text-heading: #f0f6fc;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: rgba(56, 139, 253, 0.15);
+      --accent-green: #3fb950;
+      --accent-green-dim: rgba(63, 185, 80, 0.15);
+      --accent-amber: #d29922;
+      --accent-amber-dim: rgba(210, 153, 34, 0.15);
+      --accent-purple: #bc8cff;
+      --code-bg: #0b0e14;
+      --code-border: #30363d;
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.65;
+      font-size: 15px;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 40px 24px 80px 24px;
+    }
+
+    /* Header & Hero */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 32px;
+      margin-bottom: 40px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: var(--accent-dim);
+      color: var(--accent);
+      margin-bottom: 12px;
+      border: 1px solid rgba(88, 166, 255, 0.3);
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      color: var(--text-heading);
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 700px;
+    }
+
+    /* Philosophy Banner */
+    .philosophy-card {
+      background: linear-gradient(180deg, #161b22 0%, #1a202c 100%);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 40px;
+    }
+
+    .philosophy-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-heading);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .equation-bar {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13px;
+      color: var(--accent-purple);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+
+    /* Quick Navigation Grid */
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 48px;
+    }
+
+    .toc-link {
+      display: block;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 12px 14px;
+      border-radius: 6px;
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s ease-in-out;
+    }
+
+    .toc-link:hover {
+      border-color: var(--accent);
+      background: var(--surface-subtle);
+      color: var(--text-heading);
+      transform: translateY(-1px);
+    }
+
+    /* Section Styles */
+    .section-group {
+      margin-bottom: 48px;
+    }
+
+    .group-title {
+      font-size: 1.4rem;
+      color: var(--text-heading);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover {
+      border-color: #484f58;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .card-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      margin-right: 8px;
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-heading);
+    }
+
+    .card p {
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .card p:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Code Blocks */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 13.5px;
+      color: #79c0ff;
+      margin: 10px 0 14px 0;
+      overflow-x: auto;
+      line-height: 1.45;
+    }
+
+    .code-block.output {
+      color: var(--text-muted);
+      border-left: 3px solid var(--text-muted);
+    }
+
+    .code-block.highlight {
+      border-left: 3px solid var(--accent-green);
+      color: #7ee787;
+    }
+
+    code.inline {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      font-size: 12.5px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #ff7b72;
+    }
+
+    /* Visual Flow Diagram */
+    .packet-stack {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      margin: 14px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-width: 320px;
+    }
+
+    .stack-layer {
+      background: var(--surface-subtle);
+      border: 1px solid var(--border);
+      padding: 6px 12px;
+      border-radius: 4px;
+      text-align: center;
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-heading);
+    }
+
+    .stack-layer.layer-eth { border-color: #3b82d4; color: #79c0ff; }
+    .stack-layer.layer-vlan { border-color: #bc8cff; color: #d2a8ff; }
+    .stack-layer.layer-ip { border-color: #3fb950; color: #7ee787; }
+    .stack-layer.layer-tcp { border-color: #d29922; color: #e3b341; }
+    .stack-layer.layer-app { border-color: #f778ba; color: #ff7b72; }
+
+    .stack-arrow {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    /* Operator Table */
+    .table-container {
+      overflow-x: auto;
+      margin: 20px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    th {
+      background: var(--surface-subtle);
+      color: var(--text-heading);
+      padding: 12px 16px;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-main);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    td code {
+      color: var(--accent);
+      font-family: ui-monospace, monospace;
+      font-weight: 600;
+    }
+
+    /* Cheat Sheet Section */
+    .cheatsheet-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .cheatsheet-box {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+    }
+
+    .cheatsheet-box h4 {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    .cheatsheet-box pre {
+      font-family: ui-monospace, monospace;
+      font-size: 12.5px;
+      color: #c9d1d9;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* Callouts */
+    .callout {
+      border-left: 4px solid var(--accent-amber);
+      background: var(--accent-amber-dim);
+      padding: 14px 18px;
+      border-radius: 0 var(--radius) var(--radius) 0;
+      margin: 16px 0;
+      font-size: 14px;
+      color: #f0e6d2;
+    }
+
+    .callout strong {
+      color: #e3b341;
+    }
+
+    .callout-purple {
+      border-left-color: var(--accent-purple);
+      background: rgba(188, 140, 255, 0.1);
+      color: #e2d9f3;
+    }
+
+    .callout-purple strong {
+      color: var(--accent-purple);
+    }
+
+    /* Footer */
+    footer {
+      margin-top: 60px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.85rem; }
+      .container { padding: 20px 14px; }
+      .code-block { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <span class="badge">Network Packet Analysis</span>
+      <h1>The tcpdump Field Guide</h1>
+      <p class="subtitle">A comprehensive reference and conceptual framework for packet inspection, filtering, and deep protocol troubleshooting.</p>
+    </header>
+
+    <div class="philosophy-card">
+      <div class="philosophy-title">
+        <span>💡</span> The Core Philosophy
+      </div>
+      <p>Don't think of <code>tcpdump</code> as a disconnected catalog of commands. Think of it as a <strong>expressive language</strong> for describing the exact packets you want to observe.</p>
+      <div class="equation-bar">
+        interface + protocol + host + network + port + direction + VLAN + packet size + flags + expressions
+      </div>
+    </div>
+
+    <!-- Quick Navigation -->
+    <div class="toc-grid">
+      <a href="#basics" class="toc-link">1. Core Basics & Views</a>
+      <a href="#layer2-3" class="toc-link">2. ICMP & ARP</a>
+      <a href="#hosts-nets" class="toc-link">3. Host & Network Filtering</a>
+      <a href="#transport" class="toc-link">4. TCP, UDP & Services</a>
+      <a href="#vlan-l2" class="toc-link">5. VLAN & Layer 2 MACs</a>
+      <a href="#advanced-tcp" class="toc-link">6. TCP Flags & Handshakes</a>
+      <a href="#capture-ops" class="toc-link">7. Capture Files & Controls</a>
+      <a href="#synthesis" class="toc-link">8. Synthesis & Cheat Sheet</a>
+    </div>
+
+    <!-- Group 1: Basics -->
+    <section class="section-group" id="basics">
+      <h2 class="group-title">1. Starting with the Basics</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#01</span> See Traffic on an Interface</span>
+        </div>
+        <p>Captures all traffic passing through the specified interface (e.g., <code>eth0</code>):</p>
+        <div class="code-block">sudo tcpdump -i eth0</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#02</span> Don't Resolve Names (-n & -nn)</span>
+        </div>
+        <p>Without <code>-n</code>, tcpdump attempts DNS resolution, converting IP addresses like <code>10.11.83.206</code> into hostnames. Always use numeric mode while learning and debugging.</p>
+        <div class="code-block">sudo tcpdump -i eth0 -n</div>
+        <p>Distinction between <code>-n</code> and <code>-nn</code>:</p>
+        <ul style="margin-left: 20px; color: var(--text-muted); margin-bottom: 10px;">
+          <li><code>-n</code>: Do not resolve IP addresses to hostnames.</li>
+          <li><code>-nn</code>: Do not resolve IP addresses <em>and</em> do not convert port numbers to named services.</li>
+        </ul>
+        <div class="code-block highlight">sudo tcpdump -i eth0 -nn</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#03</span> Show Ethernet MAC Addresses (-e)</span>
+        </div>
+        <p>Prints link-level header information revealing <code>source MAC > destination MAC</code>:</p>
+        <div class="code-block">sudo tcpdump -i eth0 -n -e</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#04</span> Verbosity Levels (-v, -vv, -vvv)</span>
+        </div>
+        <p>Controls the depth of header parsing (TTL, identification, protocol options):</p>
+        <div class="code-block">
+sudo tcpdump -i eth0 -n -v     # Standard verbose<br>
+sudo tcpdump -i eth0 -n -vv    # More verbose (NFS, SMB decoding)<br>
+sudo tcpdump -i eth0 -n -vvv   # Full header decode
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#05</span> Hex + ASCII Payload Dumps (-X)</span>
+        </div>
+        <p>Inspects packet payloads in both hexadecimal and readable ASCII format:</p>
+        <div class="code-block">sudo tcpdump -i eth0 -n -X</div>
+        <div class="code-block output">
+0x0040:  4865 6c6c 6f20 576f 726c 64        Hello World
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#06</span> The Complete Frame Anatomy Command</span>
+        </div>
+        <p>The ultimate laboratory command for total visibility into the entire frame:</p>
+        <div class="code-block highlight">sudo tcpdump -i eth0 -nn -e -vvv -X</div>
+      </div>
+    </section>
+
+    <!-- Group 2: ICMP & ARP -->
+    <section class="section-group" id="layer2-3">
+      <h2 class="group-title">2. ICMP & ARP Diagnostics</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#07</span> ICMP (Ping) Inspection</span>
+        </div>
+        <p>Observe ICMP echo requests and replies across the wire:</p>
+        <div class="code-block">sudo tcpdump -i eth0 -nn -e icmp</div>
+        <p>Filter ICMP for a single host or specific operation types:</p>
+        <div class="code-block">
+# Only ICMP to/from specific host
+sudo tcpdump -i eth0 -nn host 10.11.83.206 and icmp
+
+# Only ping requests (ICMP Type 8)
+sudo tcpdump -i eth0 -nn 'icmp[icmptype] == icmp-echo'
+
+# Only ping replies (ICMP Type 0)
+sudo tcpdump -i eth0 -nn 'icmp[icmptype] == icmp-echoreply'
+        </div>
+        <div class="callout">
+          <strong>Troubleshooting Pro-Tip:</strong> Filtering for requests vs replies immediately answers: <em>"Is my host sending the ping, or is the remote gateway dropping the reply?"</em>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#08</span> ARP (Address Resolution Protocol)</span>
+        </div>
+        <p>Watch IP-to-MAC resolution in real time:</p>
+        <div class="code-block">sudo tcpdump -i eth0 -nn -e arp</div>
+        <div class="code-block output">
+Request who-has 10.11.80.196 tell 10.11.80.1<br>
+Reply 10.11.80.196 is-at 00:00:0a:0b:50:c4
+        </div>
+        <p>Filter specific ARP opcodes (1 = Request, 2 = Reply):</p>
+        <div class="code-block">
+# ARP Requests only
+sudo tcpdump -i eth0 -nn -e 'arp[6:2] == 1'
+
+# ARP Replies only
+sudo tcpdump -i eth0 -nn -e 'arp[6:2] == 2'
+        </div>
+      </div>
+    </section>
+
+    <!-- Group 3: Host & Network -->
+    <section class="section-group" id="hosts-nets">
+      <h2 class="group-title">3. Host & Network Filtering</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#09</span> Host Directives</span>
+        </div>
+        <div class="code-block">
+# Bi-directional traffic for one host
+sudo tcpdump -i eth0 -nn host 10.11.83.206
+
+# Only packets originating from host
+sudo tcpdump -i eth0 -nn src host 10.11.83.206
+
+# Only packets destined to host
+sudo tcpdump -i eth0 -nn dst host 10.11.83.206
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#10</span> Multi-Host Conversations</span>
+        </div>
+        <p>Isolate traffic strictly between two communicating endpoints:</p>
+        <div class="code-block">sudo tcpdump -i eth0 -nn host 10.11.83.206 and host 10.11.80.196</div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#11</span> Subnet / Network Filtering (CIDR)</span>
+        </div>
+        <p>Crucial for troubleshooting routed network segments and subnets:</p>
+        <div class="code-block">
+# Traffic involving the subnet
+sudo tcpdump -i eth0 -nn net 10.11.80.0/24
+
+# Traffic from subnet
+sudo tcpdump -i eth0 -nn src net 10.11.80.0/24
+
+# Traffic to subnet
+sudo tcpdump -i eth0 -nn dst net 10.11.80.0/24
+        </div>
+      </div>
+    </section>
+
+    <!-- Group 4: Transport Layer -->
+    <section class="section-group" id="transport">
+      <h2 class="group-title">4. Transport Layer (TCP, UDP & Applications)</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#12</span> Port & Protocol Specifics</span>
+        </div>
+        <div class="code-block">
+# General protocol filters
+sudo tcpdump -i eth0 -nn tcp
+sudo tcpdump -i eth0 -nn udp
+
+# Port filtering
+sudo tcpdump -i eth0 -nn tcp port 5000
+sudo tcpdump -i eth0 -nn tcp src port 5000
+sudo tcpdump -i eth0 -nn tcp dst port 5000
+
+# Port ranges
+sudo tcpdump -i eth0 -nn 'tcp portrange 8000-9000'
+sudo tcpdump -i eth0 -nn 'udp portrange 5000-6000'
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#13</span> Common Protocols (DNS, HTTP, DHCP, NetBIOS)</span>
+        </div>
+        <div class="code-block">
+# DNS (Both TCP & UDP)
+sudo tcpdump -i eth0 -nn port 53
+sudo tcpdump -i eth0 -nn udp port 53
+sudo tcpdump -i eth0 -nn tcp port 53
+
+# Web traffic & Unencrypted payloads
+sudo tcpdump -i eth0 -nn tcp port 80
+sudo tcpdump -i eth0 -nn -X tcp port 80
+sudo tcpdump -i eth0 -nn tcp port 443
+
+# DHCP negotiation
+sudo tcpdump -i eth0 -nn 'udp port 67 or udp port 68'
+
+# NetBIOS Name Service & Broadcasts
+sudo tcpdump -i eth0 -nn udp port 137
+sudo tcpdump -i eth0 -nn 'udp port 137 and dst host 255.255.255.255'
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#14</span> Boolean Combinations & Exclusions</span>
+        </div>
+        <div class="code-block">
+# Combine protocols
+sudo tcpdump -i eth0 -nn 'tcp or udp'
+sudo tcpdump -i eth0 -nn 'tcp or icmp'
+
+# Invert / Exclude protocols
+sudo tcpdump -i eth0 -nn 'not icmp'
+sudo tcpdump -i eth0 -nn 'not arp'
+        </div>
+      </div>
+    </section>
+
+    <!-- Group 5: VLAN & Layer 2 -->
+    <section class="section-group" id="vlan-l2">
+      <h2 class="group-title">5. VLAN & Layer 2 Ethernet Frames</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#15</span> VLAN Tagged 802.1Q Frames</span>
+        </div>
+        <p>When monitoring trunk links or tagged interfaces:</p>
+        <div class="code-block">
+sudo tcpdump -i eth0 -nn -e vlan
+sudo tcpdump -i eth0 -nn -e 'vlan 100'
+sudo tcpdump -i eth0 -nn -e 'vlan 100 and ip'
+sudo tcpdump -i eth0 -nn -e 'vlan 100 and tcp port 443'
+        </div>
+
+        <p>Frame encapsulation structure:</p>
+        <div class="packet-stack">
+          <div class="stack-layer layer-eth">Destination & Source MAC</div>
+          <div class="stack-arrow">↓</div>
+          <div class="stack-layer layer-vlan">802.1Q Header (VLAN Tag)</div>
+          <div class="stack-arrow">↓</div>
+          <div class="stack-layer layer-ip">IPv4 / IPv6 Header</div>
+          <div class="stack-arrow">↓</div>
+          <div class="stack-layer layer-tcp">TCP / UDP Header</div>
+          <div class="stack-arrow">↓</div>
+          <div class="stack-layer layer-app">Payload Data</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#16</span> MAC Address & Multicast / Broadcast Filtering</span>
+        </div>
+        <div class="code-block">
+# Match specific MACs (ideal for VM troubleshooting)
+sudo tcpdump -i eth0 -nn -e 'ether host 52:54:00:ba:51:21'
+sudo tcpdump -i eth0 -nn -e 'ether src 00:00:0a:0b:53:ce'
+sudo tcpdump -i eth0 -nn -e 'ether dst 00:00:0a:0b:50:c4'
+
+# Layer 2 & Layer 3 Broadcast
+sudo tcpdump -i eth0 -nn -e ether broadcast
+sudo tcpdump -i eth0 -nn 'dst host 255.255.255.255'
+
+# Layer 2 & Layer 3 Multicast
+sudo tcpdump -i eth0 -nn -e ether multicast
+sudo tcpdump -i eth0 -nn ip multicast
+        </div>
+      </div>
+    </section>
+
+    <!-- Group 6: TCP Flags -->
+    <section class="section-group" id="advanced-tcp">
+      <h2 class="group-title">6. TCP Flags & Stateful Handshakes</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#17</span> Bitmask Flag Filtering</span>
+        </div>
+        <p>Inspect exact control flags using TCP offset expressions:</p>
+        <div class="code-block">
+# SYN - Connection initiation
+sudo tcpdump -i eth0 -nn 'tcp[tcpflags] & tcp-syn != 0'
+
+# ACK - Acknowledgements
+sudo tcpdump -i eth0 -nn 'tcp[tcpflags] & tcp-ack != 0'
+
+# FIN - Clean teardown
+sudo tcpdump -i eth0 -nn 'tcp[tcpflags] & tcp-fin != 0'
+
+# RST - Connection reset / rejected
+sudo tcpdump -i eth0 -nn 'tcp[tcpflags] & tcp-rst != 0'
+
+# PSH - Push data
+sudo tcpdump -i eth0 -nn 'tcp[tcpflags] & tcp-push != 0'
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#18</span> Tracking the Three-Way Handshake</span>
+        </div>
+        <p>Watch state transitions live without hex payload clutter:</p>
+        <div class="code-block">sudo tcpdump -i eth0 -nn -e tcp port 5000</div>
+        <div class="code-block output">
+Client → Server   Flags [S]      (SYN)
+Server → Client   Flags [S.]     (SYN-ACK)
+Client → Server   Flags [.]      (ACK)
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#19</span> Packet Size & MTU Diagnostics</span>
+        </div>
+        <div class="code-block">
+# Small packets (e.g., pure ACKs, keepalives)
+sudo tcpdump -i eth0 -nn 'less 100'
+
+# Large packets (e.g., MTU / jumbo frame testing)
+sudo tcpdump -i eth0 -nn 'greater 1400'
+
+# Packets within a specific size bracket
+sudo tcpdump -i eth0 -nn 'greater 100 and less 500'
+        </div>
+      </div>
+    </section>
+
+    <!-- Group 7: Capture & Workflows -->
+    <section class="section-group" id="capture-ops">
+      <h2 class="group-title">7. Capture Operations & Analysis Workflows</h2>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#20</span> Capture to PCAP & Offline Analysis</span>
+        </div>
+        <div class="code-block">
+# Capture full packet (-s 0) to file
+sudo tcpdump -i eth0 -nn -s 0 -w capture.pcap
+
+# Read and inspect stored capture offline
+tcpdump -nn -r capture.pcap
+tcpdump -nn -e -vvv -r capture.pcap
+tcpdump -nn -e -vvv -X -r capture.pcap
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title"><span class="card-num">#21</span> Interfaces, Limits & Timestamps</span>
+        </div>
+        <div class="code-block">
+# Limit packet count and exit
+sudo tcpdump -i eth0 -nn -c 20
+
+# Formatted human-readable timestamps (YYYY-MM-DD HH:MM:SS)
+sudo tcpdump -i eth0 -nn -tttt
+
+# Print numbered packet index
+sudo tcpdump -i eth0 -nn -#
+
+# Loopback & pseudo-device captures
+sudo tcpdump -i lo -nn
+sudo tcpdump -i any -nn
+        </div>
+      </div>
+    </section>
+
+    <!-- Group 8: Operators Table & Synthesis -->
+    <section class="section-group" id="synthesis">
+      <h2 class="group-title">8. Filter Operators Reference</h2>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Operator / Keyword</th>
+              <th>Category</th>
+              <th>Description / Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>and</code></td><td>Logical</td><td>Both conditions must evaluate to true</td></tr>
+            <tr><td><code>or</code></td><td>Logical</td><td>Either condition may evaluate to true</td></tr>
+            <tr><td><code>not</code></td><td>Logical</td><td>Negates / excludes condition</td></tr>
+            <tr><td><code>host</code></td><td>Addressing</td><td>Matches IPv4 / IPv6 source or destination</td></tr>
+            <tr><td><code>src / dst</code></td><td>Direction</td><td>Specifies packet origin or target</td></tr>
+            <tr><td><code>net</code></td><td>Addressing</td><td>Matches subnet in CIDR format</td></tr>
+            <tr><td><code>port / portrange</code></td><td>Transport</td><td>Matches Layer 4 port or numeric span</td></tr>
+            <tr><td><code>tcp / udp / icmp / arp</code></td><td>Protocol</td><td>Filters specific protocol header</td></tr>
+            <tr><td><code>vlan</code></td><td>Layer 2</td><td>802.1Q tagged frame header</td></tr>
+            <tr><td><code>ether</code></td><td>Layer 2</td><td>Matches Ethernet MAC, broadcast, or multicast</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <strong>Precedence Warning:</strong> When combining <code>and</code> and <code>or</code> operators, always isolate them using quotes and parentheses to prevent unintended filter precedence:
+        <div class="code-block" style="margin-top: 8px;">
+sudo tcpdump -i eth0 -nn '(tcp port 80 or tcp port 443) and host 10.11.83.206'
+        </div>
+      </div>
+
+      <div class="callout callout-purple">
+        <strong>Previewing IPv6:</strong> In IPv6 environments, ARP is replaced with ICMPv6 Neighbor Discovery (Router & Neighbor Solicitations/Advertisements). Filter with:
+        <div class="code-block" style="margin-top: 8px;">
+sudo tcpdump -i eth0 -nn -e icmp6
+        </div>
+      </div>
+    </section>
+
+    <!-- Compact Cheat Sheet -->
+    <section class="section-group">
+      <h2 class="group-title">⚡ Quick Reference Cheat Sheet</h2>
+
+      <div class="cheatsheet-grid">
+        <div class="cheatsheet-box">
+          <h4>Basics & Views</h4>
+          <pre>tcpdump -i eth0 -nn
+tcpdump -i eth0 -nn -e
+tcpdump -i eth0 -nn -e -vvv
+tcpdump -i eth0 -nn -e -vvv -X</pre>
+        </div>
+
+        <div class="cheatsheet-box">
+          <h4>Host Filters</h4>
+          <pre>host 10.11.83.206
+src host 10.11.83.206
+dst host 10.11.83.206</pre>
+        </div>
+
+        <div class="cheatsheet-box">
+          <h4>Network & Subnet</h4>
+          <pre>net 10.11.80.0/24
+src net 10.11.80.0/24
+dst net 10.11.80.0/24</pre>
+        </div>
+
+        <div class="cheatsheet-box">
+          <h4>Protocols & Ports</h4>
+          <pre>tcp / udp / icmp / arp
+port 80
+port 443
+src port 5000
+portrange 8000-9000</pre>
+        </div>
+
+        <div class="cheatsheet-box">
+          <h4>Layer 2 & VLAN</h4>
+          <pre>ether host 52:54:00:ba:51:21
+ether broadcast
+vlan 100
+vlan 100 and tcp port 443</pre>
+        </div>
+
+        <div class="cheatsheet-box">
+          <h4>TCP Flags</h4>
+          <pre>tcp[tcpflags] & tcp-syn != 0
+tcp[tcpflags] & tcp-ack != 0
+tcp[tcpflags] & tcp-fin != 0
+tcp[tcpflags] & tcp-rst != 0</pre>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p>The tcpdump Field Guide — Crafted for clarity and deep packet mastery.</p>
+    </footer>
+  </div>
+
+</body>
+</html>
